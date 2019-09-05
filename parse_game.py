@@ -49,13 +49,13 @@ class ParseGame(object):
     def import_game(self):
         """ Reads in the game JSON file, get basic game info such as match id, league and season
 		"""
-        self.logger.info("Reading in file" + self.filepath)
+        self.logger.info("Reading in file " + self.filepath)
         with open(self.filepath) as f:
             self.data = json.load(f)
         self.logger.info("Read in file " + self.filepath)
 
         self.logger.info("Gathering match id, league, season")
-        self.match_id = re.findall("\d{6}", self.filepath)[0]
+        self.match_id = int(re.findall("\d{6}", self.filepath)[0])
         self.league = re.findall("[A-Z]{3}\d", self.filepath)[0]
         self.season = re.findall("\d{4}-\d{4}", self.filepath)[
             0
@@ -63,11 +63,11 @@ class ParseGame(object):
         self.logger.info("Retrieved match id, league, season")
         self.logger.info(
             "Working on match "
-            + self.match_id
+            + str(self.match_id)
             + " in league "
             + self.league
             + " in season "
-            + self.season
+            + str(self.season)
         )
 
     def check_game_data(self):
@@ -89,13 +89,13 @@ class ParseGame(object):
     def extract_referee(self):
         """ Extract referee data, which is only referee id, name and match id
 		"""
-        self.logger.info("Retrieving referee data " + self.match_id)
-        referee_id = self.data["referee"]["officialId"]
+        self.logger.info("Retrieving referee data " + str(self.match_id))
+        referee_id = int(self.data["referee"]["officialId"])
         referee_name = self.data["referee"]["name"]
         referee_df = pd.DataFrame([self.match_id, referee_id, referee_name]).transpose()
         referee_df.columns = ["MatchId", "RefereeId", "RefereeName"]
         self.referee_data = referee_df
-        self.logger.info("Retrieved referee data " + self.match_id)
+        self.logger.info("Retrieved referee data " + str(self.match_id))
 
     def extract_player_game(self):
         """ Extract info on player-games
@@ -106,13 +106,13 @@ class ParseGame(object):
             """
             players_df = pd.DataFrame()
             for player in player_list:
-                player_id = player["playerId"]
-                shirt_num = player["shirtNo"]
+                player_id = int(player["playerId"])
+                shirt_num = int(player["shirtNo"])
                 name = player["name"]
                 player_pos = player["position"]
-                height = player["height"]
-                weight = player["weight"]
-                age = player["age"]
+                height = int(player["height"])
+                weight = int(player["weight"])
+                age = int(player["age"])
                 man_of_match = player["isManOfTheMatch"]
                 field = player["field"]
                 if "subbedOutPlayerId" in player.keys():
@@ -162,7 +162,7 @@ class ParseGame(object):
                 players_df = players_df.append(player_row)
             return players_df
 
-        self.logger.info("Retrieving player-game info " + self.match_id)
+        self.logger.info("Retrieving player-game info " + str(self.match_id))
         home_players = self.data["home"]["players"]
         away_players = self.data["away"]["players"]
         home_player_df = side_player_info(home_players)
@@ -170,21 +170,21 @@ class ParseGame(object):
         all_player_df = home_player_df.append(away_player_df)
         all_player_df["MatchId"] = self.match_id
         self.player_game_data = all_player_df
-        self.logger.info("Retrieved player-game info for " + self.match_id)
+        self.logger.info("Retrieved player-game info for " + str(self.match_id))
 
     def extract_game(self):
         """ Extract game info
 		"""
-        self.logger.info("Retrieving game info " + self.match_id)
-        home_team_id = self.data["home"]["teamId"]
+        self.logger.info("Retrieving game info " + str(self.match_id))
+        home_team_id = int(self.data["home"]["teamId"])
         home_team_name = self.data["home"]["name"]
         home_team_manager = self.data["home"]["managerName"]
-        home_avg_age = self.data["home"]["averageAge"]
+        home_avg_age = float(self.data["home"]["averageAge"])
 
-        away_team_id = self.data["away"]["teamId"]
+        away_team_id = int(self.data["away"]["teamId"])
         away_team_name = self.data["away"]["name"]
         away_team_manager = self.data["away"]["managerName"]
-        away_avg_age = self.data["away"]["averageAge"]
+        away_avg_age = float(self.data["away"]["averageAge"])
 
         home_goals = int(self.data["score"].split(":")[0].strip())
         away_goals = int(self.data["score"].split(":")[1].strip())
@@ -193,18 +193,18 @@ class ParseGame(object):
         home_ft_goals = int(self.data["ftScore"].split(":")[0].strip())
         away_ft_goals = int(self.data["ftScore"].split(":")[1].strip())
 
-        attendance = self.data["attendance"]
+        attendance = int(self.data["attendance"])
         venue_name = self.data["venueName"]
         weather_code = self.data["weatherCode"]
         start_time = self.data["startTime"].replace("T", " ")
         start_time = (
-            datetime.strptime(self.start_time, "%Y-%m-%d %H:%M:%S")
+            datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
             .time()
             .strftime("%H:%M:%S")
         )
         start_date = self.data["startDate"].replace("T", " ")
         start_date = (
-            datetime.strptime(self.start_date, "%Y-%m-%d %H:%M:%S")
+            datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
             .date()
             .strftime("%Y-%m-%d")
         )
@@ -260,13 +260,54 @@ class ParseGame(object):
             "AwayFTGoals",
         ]
         game_info_df["StartTime"] = pd.to_datetime(
-            game_info_df["StartTime"], exact=False, format="%Y-%m-%d"
+            game_info_df["StartTime"]
         )
         game_info_df["DateTime"] = pd.to_datetime(game_info_df["StartDate"])
         self.game_data = game_info_df
-        self.logger.info("Retrieved game info " + self.match_id)
+        self.logger.info("Retrieved game info " + str(self.match_id))
 
-    def extract_events():
+    def extract_events(self):
         """ Extracts event info
         """
-        raise NotImplementedError
+        self.logger.info("Retrieving events  " + str(self.match_id))
+        event_df = pd.DataFrame()
+        for event in self.data['events']:
+            event_id = int(event['id'])
+            event_match_id = int(event['eventId'])
+            minute = int(event['minute'])
+            second = int(event['second'])
+            event_team_id = int(event['teamId'])
+            if 'playerId' in event.keys():
+                player_id = int(event['playerId'])
+            else:
+                player_id = None
+            start_x = float(event['x'])
+            end_y = float(event['y'])
+            period = event['period']['displayName']
+            event_type = event['type']['displayName']
+            outcome = event['outcomeType']['displayName']
+            if 'endX' in event.keys():
+                end_x = float(event['endX'])
+                end_y = float(event['endY'])
+            else:
+                end_x = None
+                end_y = None
+            # quals = event['qualifiers']
+            # for q in quals:
+            #     if q['type']['displayName'] == "Zone":
+            #         zone = q['value']
+            #     else:
+            #         zone = None
+            #     if q['type']['displayName'] == "Angle":
+            #         angle = q['value']
+            #     else:
+            #         angle = None
+            #     if q['type']['displayName'] == "Angle":
+            #         angle = q['value']
+            #     else:
+            #         angle = None
+            event_row = pd.DataFrame([parser.match_id, event_id, event_match_id,  minute, second, event_team_id, player_id, start_x, end_y, period, event_type, outcome, end_x, end_y]).transpose()
+            event_row.columns = ["MatchId", "EventId", "EventMatchId", "Minute", "Second", "TeamId", "PlayerId", "StartX", "StartY", "Period", "Type", "Outcome", "EndX", "EndY"]
+            event_df = event_df.append(event_row)
+        self.event_data = event_df
+        self.logger.info("Retrieved events for " + str(self.match_id))
