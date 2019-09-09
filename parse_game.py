@@ -147,7 +147,7 @@ class ParseGame(object):
                     "MatchId",
                     "PlayerId",
                     "ShirtNo",
-                    "Name",
+                    "PlayerName",
                     "Position",
                     "Started",
                     "SubOutPlayerId",
@@ -259,10 +259,8 @@ class ParseGame(object):
             "HomeFTGoals",
             "AwayFTGoals",
         ]
-        game_info_df["StartTime"] = pd.to_datetime(
-            game_info_df["StartTime"]
-        )
-        game_info_df["DateTime"] = pd.to_datetime(game_info_df["StartDate"])
+        # game_info_df["StartTime"] = pd.to_datetime(game_info_df["StartTime"])
+        # game_info_df["StartDate"] = pd.to_datetime(game_info_df["StartDate"])
         self.game_data = game_info_df
         self.logger.info("Retrieved game info " + str(self.match_id))
 
@@ -271,24 +269,33 @@ class ParseGame(object):
         """
         self.logger.info("Retrieving events  " + str(self.match_id))
         event_df = pd.DataFrame()
-        for event in self.data['events']:
-            event_id = int(event['id'])
-            event_match_id = int(event['eventId'])
-            minute = int(event['minute'])
-            second = int(event['second'])
-            event_team_id = int(event['teamId'])
-            if 'playerId' in event.keys():
-                player_id = int(event['playerId'])
+        for event in self.data["events"]:
+            try:
+                event_id = int(event["id"])
+            except:
+                event_id = None
+            try:
+                event_match_id = int(event["eventId"])
+            except:
+                event_match_id = None
+            minute = int(event["minute"])
+            try:
+                second = int(event["second"])
+            except:
+                second = None
+            event_team_id = int(event["teamId"])
+            if "playerId" in event.keys():
+                player_id = int(event["playerId"])
             else:
                 player_id = None
-            start_x = float(event['x'])
-            end_y = float(event['y'])
-            period = event['period']['displayName']
-            event_type = event['type']['displayName']
-            outcome = event['outcomeType']['displayName']
-            if 'endX' in event.keys():
-                end_x = float(event['endX'])
-                end_y = float(event['endY'])
+            start_x = float(event["x"])
+            end_y = float(event["y"])
+            period = event["period"]["displayName"]
+            event_type = event["type"]["displayName"]
+            outcome = event["outcomeType"]["displayName"]
+            if "endX" in event.keys():
+                end_x = float(event["endX"])
+                end_y = float(event["endY"])
             else:
                 end_x = None
                 end_y = None
@@ -306,8 +313,40 @@ class ParseGame(object):
             #         angle = q['value']
             #     else:
             #         angle = None
-            event_row = pd.DataFrame([parser.match_id, event_id, event_match_id,  minute, second, event_team_id, player_id, start_x, end_y, period, event_type, outcome, end_x, end_y]).transpose()
-            event_row.columns = ["MatchId", "EventId", "EventMatchId", "Minute", "Second", "TeamId", "PlayerId", "StartX", "StartY", "Period", "Type", "Outcome", "EndX", "EndY"]
+            event_row = pd.DataFrame(
+                [
+                    self.match_id,
+                    event_id,
+                    event_match_id,
+                    minute,
+                    second,
+                    event_team_id,
+                    player_id,
+                    start_x,
+                    end_y,
+                    period,
+                    event_type,
+                    outcome,
+                    end_x,
+                    end_y,
+                ]
+            ).transpose()
+            event_row.columns = [
+                "MatchId",
+                "EventId",
+                "EventMatchId",
+                "Minute",
+                "Second",
+                "TeamId",
+                "PlayerId",
+                "StartX",
+                "StartY",
+                "Half",
+                "Type",
+                "Outcome",
+                "EndX",
+                "EndY",
+            ]
             event_df = event_df.append(event_row)
         self.event_data = event_df
         self.logger.info("Retrieved events for " + str(self.match_id))
