@@ -52,7 +52,7 @@ class ParseGame(object):
         self.logger.info("Reading in file " + self.filepath)
         with open(self.filepath) as f:
             self.data = json.load(f)
-        self.logger.info("Read in file " + self.filepath)
+        self.logger.info("Finished reading in file " + self.filepath)
 
         self.logger.info("Gathering match id, league, season")
         self.match_id = int(re.findall("\d{6}", self.filepath)[0])
